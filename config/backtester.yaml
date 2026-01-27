@@ -1,0 +1,121 @@
+# Backtester Configuration
+# - Any missing keys fall back to research/backtester/config.py:DEFAULT_CONFIG
+
+START_DATE: "2023-01-01"
+END_DATE: null
+INITIAL_CAPITAL: 100000000
+TRADING_DAYS: 252
+FFILL: true
+
+JSON:
+  enabled: false
+  run_dir: backtester_20260120_141740
+
+STATIC:
+  RATIO: 0.5
+  # ETF(정적) 총비용 예시: 0.03% ~ 0.05%  => 0.0003 ~ 0.0005
+  FEES: 0.0004
+  ASSETS:
+    KOSPI200: "069500"      # KODEX 200
+    BOND10Y:  "148070"      # KODEX 국고채10년
+    GOLD:     "132030"      # KODEX 골드선물(H)
+  WEIGHTS: [0.4, 0.4, 0.2]
+
+DYNAMIC:
+  RATIO: 0.5
+  # 개별주식(동적) 총비용 예시: 0.20% ~ 0.25%  => 0.0020 ~ 0.0025
+  FEES: 0.0022
+  # 공통 윈도우(모든 모드에 동일 적용)
+  MOMENTUM_WINDOW: 60         # 예: 60 거래일 모멘텀
+  CORRELATION_WINDOW: 60      # 예: 60 거래일 상관계수
+  # 동적 리밸런싱 주기 (Daily | Monthly | Quarterly | ...)
+  # - Monthly: 월말 계산 후 월초 재진입(아래 rebalance_timing 참고)
+  # - Daily: 매일 리밸런싱
+  REBALANCE_FREQ: Monthly
+  SELECTION:
+    # mode:
+    # - auto: 전체 유니버스에서 점수로 자동 선별
+    # - season: SEASONS 티커 풀에서 선별
+    mode: auto           # season | auto
+    top_n: 10            # 점수 계산 대상 상위 N
+    buy_n: 3             # 실제 편입 수(나머지는 예비)
+    # 예비 편입 옵션
+    reserve_enabled: true # 로스컷 시 예비 순위로 대체
+    reserve_order: []     # 예: [4,6,8,7,5,10] 순서대로 편입
+    # 리밸런싱 시점
+    # - same_open: 리밸런싱일 시가에 즉시 진입
+    # - next_open: 리밸런싱일 종가로 계산 후 다음 시가에 진입
+    rebalance_timing: next_open
+    lookback_years: 3
+    corr_threshold: 0.3
+    corr_drop_pct: 0.2   # drop bottom % by corr_count before scoring
+    weighting: equal     # equal | allocator | rank_weights
+    rank_weights: []     # e.g. [0.3,0.3,0.2,0.2] (top_n length)
+    score_weights:       # factor scoring weights (sum normalized internally)
+      corr: 0.4
+      momentum: 0.6
+    exclude_kr_etf: true
+    FILTERS:
+      # 후보 필터(유동성/규모)
+      min_age_days: 750
+      min_market_cap: 50000000000
+      min_price: 1000
+      min_turnover: 30000000000
+      turnover_window: 60
+    # universe_root: ../data  # optional: override data root for ticker scan
+  SECTOR_MAP_FILE: ../data/processed/sector_map.csv
+  LOGIC_PROFILE: null
+  LOGIC:
+    correlation_filter:
+      # season 모드에서 상관필터 설정
+      type: average   # none | average
+      threshold: 0.4
+    momentum_ranker:
+      # season 모드에서 모멘텀 랭커
+      type: simple   # simple | vol_adj
+      # vol_adj 옵션일 때만 사용
+      # vol_window: 60
+      # min_vol: 1.0e-8
+    selector:
+      # season 모드 셀렉터
+      type: rank_range   # rank_range | topn
+      rank_range: [4, 7]
+      replacement_order: [1, 2, 3, 8, 9, 10]
+    allocator:
+      # season 모드 비중 할당
+      type: slot_weights # slot_weights | equal | inv_vol
+      slot_weights: [0.3, 0.3, 0.2, 0.2]
+      # inv_vol 옵션일 때만 사용
+      # window: 60
+      # min_vol: 1.0e-8
+      # max_weight: 0.6
+    stop_loss:
+      # 스톱로스(일단위 종가 기준)
+      type: trailing_pct # trailing_pct | none
+      pct: 0.05          # 예: 0.05 = -5% 트레일링
+  # NOTE: mode=auto이면 SEASONS는 무시됩니다.
+  SEASONS:
+    - name: Spring
+      start_md: "01-01"
+      end_md: "03-31"
+      tickers: ["000720","028050","047040","006360","000150","010140","034020","004020","005490","036460"]
+    - name: Summer
+      start_md: "04-01"
+      end_md: "06-30"
+      tickers: ["005930","000660","035420","035720","373220","051910","006400","247540","096770","009150"]
+    - name: Fall
+      start_md: "07-01"
+      end_md: "09-30"
+      tickers: ["055550","105560","086790","316140","139130","138930","003540","000810","032830","015760"]
+    - name: Winter
+      start_md: "10-01"
+      end_md: "12-31"
+      tickers: ["207940","068270","326030","006280","145020","128940","069620","003090","302440","000100"]
+
+BENCHMARK_TICKER: "069500"
+
+DATA:
+  root: ../data
+
+RESULTS:
+  root: ../results

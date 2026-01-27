@@ -1,0 +1,48 @@
+# 데이터 수집/전처리 설정
+data:
+  base_dir: ../data
+  output_mode: both  # raw | processed | both | list_only
+  preprocess: true
+  use_cache: true
+  cache_dir: raw
+  incremental: true        # 이미 받은 parquet은 증분 업데이트
+  skip_if_covered: true    # start~end 범위가 이미 있으면 스킵
+
+paths:
+  raw:
+    kr_stocks: raw/kr_stocks
+    us_stocks: raw/us_stocks
+    kr_etf: raw/kr_etf
+    us_etf: raw/us_etf
+  processed:
+    kr_stocks: processed/kr_stocks
+    us_stocks: processed/us_stocks
+    kr_etf: processed/kr_etf
+    us_etf: processed/us_etf
+
+date:
+  start: 2005-01-03
+  end: null
+
+download:
+  kr_stocks: false
+  us_stocks: false
+  kr_etf: true
+  us_etf: false
+
+markets:
+  kr: KRX
+  us: [NASDAQ, NYSE, AMEX]
+
+lists:
+  use_list_stocks: false
+  use_list_etf: false
+  stocks_csv: null
+  etf_csv: null
+  refresh_master: true     # 마스터/리스트 CSV 갱신 여부
+
+sources:
+  use_marcap: true
+  use_fdr: true
+  use_fdr_listing: false
+  preload_marcap: true

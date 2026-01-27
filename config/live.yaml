@@ -1,0 +1,5 @@
+mode: paper
+initial_cash: 10000000
+universe_key: cio_universe
+universe: []
+slack_webhook: null
