@@ -6,3 +6,4 @@ finance-datareader
 matplotlib
 openpyxl
 pyarrow
+directory_tree

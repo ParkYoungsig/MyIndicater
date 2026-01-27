@@ -9,7 +9,7 @@ FFILL: true
 
 JSON:
   enabled: false
-  run_dir: backtester_20260120_141740
+  run_dir:
 
 STATIC:
   RATIO: 0.5
@@ -31,7 +31,7 @@ DYNAMIC:
   # 동적 리밸런싱 주기 (Daily | Monthly | Quarterly | ...)
   # - Monthly: 월말 계산 후 월초 재진입(아래 rebalance_timing 참고)
   # - Daily: 매일 리밸런싱
-  REBALANCE_FREQ: Daily
+  REBALANCE_FREQ: Monthly
   SELECTION:
     # mode:
     # - auto: 전체 유니버스에서 점수로 자동 선별
