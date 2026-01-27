@@ -38,7 +38,7 @@ DYNAMIC:
     # - season: SEASONS 티커 풀에서 선별
     mode: auto           # season | auto
     top_n: 10            # 점수 계산 대상 상위 N
-    buy_n: 3             # 실제 편입 수(나머지는 예비)
+    buy_n: 4             # 실제 편입 수(나머지는 예비)
     # 예비 편입 옵션
     reserve_enabled: true # 로스컷 시 예비 순위로 대체
     reserve_order: []     # 예: [4,6,8,7,5,10] 순서대로 편입
