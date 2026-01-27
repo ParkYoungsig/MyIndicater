@@ -1,0 +1,10 @@
+{
+  "last_rebalance_date": null,
+  "high_water": {},
+  "last_target_weights": {
+    "069500": 0.2,
+    "148070": 0.2,
+    "132030": 0.1
+  },
+  "cash": 10000000.0
+}

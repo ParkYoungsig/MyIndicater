@@ -93,6 +93,26 @@ def load_data_config(name: str = "data") -> Dict[str, Any]:
     return load_yaml_config(name)
 
 
+def get_krx_universe_codes(
+    config: Dict[str, Any], *, refresh_master: bool = False
+) -> list[str]:
+    """KRX 종목코드를 파일 저장 없이 메모리로만 반환."""
+    cfg = dict(config)
+    lists_cfg = dict(cfg.get("lists", {}) or {})
+    lists_cfg["refresh_master"] = bool(refresh_master)
+    cfg["lists"] = lists_cfg
+    sources_cfg = dict(cfg.get("sources", {}) or {})
+    sources_cfg["use_marcap"] = False
+    sources_cfg["use_fdr_listing"] = True
+    cfg["sources"] = sources_cfg
+    downloader = UnifiedDownloader(cfg)
+    downloader.refresh_master = bool(refresh_master)
+    downloader.use_marcap = False
+    downloader.use_fdr = True
+    codes, _ = downloader._get_krx_list()
+    return list(dict.fromkeys([str(c).zfill(6) for c in codes if str(c).strip()]))
+
+
 def _latest_krx_list_csv(base_dir: str) -> str | None:
     try:
         base = Path(base_dir)

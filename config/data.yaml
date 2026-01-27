@@ -25,7 +25,7 @@ date:
   end: null
 
 download:
-  kr_stocks: false
+  kr_stocks: true
   us_stocks: false
   kr_etf: true
   us_etf: false

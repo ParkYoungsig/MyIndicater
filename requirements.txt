@@ -1,0 +1,8 @@
+pandas
+numpy
+pyyaml
+requests
+finance-datareader
+matplotlib
+openpyxl
+pyarrow

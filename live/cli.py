@@ -1,4 +1,11 @@
+import sys
+import os
 import argparse
+
+# When running `python live/cli.py` ensure project root is on sys.path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from live.engine import LiveEngine
 

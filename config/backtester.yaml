@@ -1,7 +1,7 @@
 # Backtester Configuration
 # - Any missing keys fall back to research/backtester/config.py:DEFAULT_CONFIG
 
-START_DATE: "2023-01-01"
+START_DATE: "2015-01-01"
 END_DATE: null
 INITIAL_CAPITAL: 100000000
 TRADING_DAYS: 252
@@ -31,7 +31,7 @@ DYNAMIC:
   # 동적 리밸런싱 주기 (Daily | Monthly | Quarterly | ...)
   # - Monthly: 월말 계산 후 월초 재진입(아래 rebalance_timing 참고)
   # - Daily: 매일 리밸런싱
-  REBALANCE_FREQ: Monthly
+  REBALANCE_FREQ: Daily
   SELECTION:
     # mode:
     # - auto: 전체 유니버스에서 점수로 자동 선별
@@ -61,7 +61,7 @@ DYNAMIC:
       min_market_cap: 50000000000
       min_price: 1000
       min_turnover: 30000000000
-      turnover_window: 60
+      turnover_window: 20
     # universe_root: ../data  # optional: override data root for ticker scan
   SECTOR_MAP_FILE: ../data/processed/sector_map.csv
   LOGIC_PROFILE: null
@@ -79,12 +79,12 @@ DYNAMIC:
     selector:
       # season 모드 셀렉터
       type: rank_range   # rank_range | topn
-      rank_range: [4, 7]
-      replacement_order: [1, 2, 3, 8, 9, 10]
+      rank_range: [3, 6]
+      replacement_order: [1, 2, 7, 8, 9, 10]
     allocator:
       # season 모드 비중 할당
       type: slot_weights # slot_weights | equal | inv_vol
-      slot_weights: [0.3, 0.3, 0.2, 0.2]
+      slot_weights: [0.25, 0.25, 0.25, 0.25]
       # inv_vol 옵션일 때만 사용
       # window: 60
       # min_vol: 1.0e-8
@@ -92,7 +92,7 @@ DYNAMIC:
     stop_loss:
       # 스톱로스(일단위 종가 기준)
       type: trailing_pct # trailing_pct | none
-      pct: 0.05          # 예: 0.05 = -5% 트레일링
+      pct: 0.07          # 예: 0.05 = -5% 트레일링
   # NOTE: mode=auto이면 SEASONS는 무시됩니다.
   SEASONS:
     - name: Spring

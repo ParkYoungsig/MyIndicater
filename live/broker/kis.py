@@ -8,14 +8,22 @@ from .base import LiveBroker
 
 
 class KISBroker(LiveBroker):
-    def __init__(self, mock: bool | None = None) -> None:
-        self.client = KISClient(mock=mock)
+    def __init__(
+        self,
+        mock: bool | None = None,
+        *,
+        initial_cash: float = 10_000_000,
+    ) -> None:
+        self.client = KISClient(mock=mock, initial_cash=initial_cash)
 
     def get_price(self, symbol: str) -> float:
         return self.client.get_price(symbol)
 
     def get_positions(self) -> Dict[str, int]:
         return self.client.get_positions()
+
+    def get_cash(self) -> float:
+        return self.client.get_cash()
 
     def place_order(
         self, symbol: str, qty: int, side: str, order_type: str = "market"

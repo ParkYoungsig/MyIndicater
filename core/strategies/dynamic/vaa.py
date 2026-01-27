@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from core.allocators import build_weights, single_asset_weight
+from core.allocators import single_asset_weight
 from core.signals import weighted_momentum
 from core.strategies.base import Strategy
 

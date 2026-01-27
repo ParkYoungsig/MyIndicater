@@ -7,6 +7,9 @@ class LiveBroker:
     def get_price(self, symbol: str) -> float:
         raise NotImplementedError
 
+    def get_cash(self) -> float:
+        raise NotImplementedError
+
     def get_positions(self) -> Dict[str, int]:
         raise NotImplementedError
 

@@ -320,15 +320,42 @@ class DynamicStrategy:
         if scores.empty:
             return pd.DataFrame(), corr
 
-        scores["corr_rank"] = scores["corr_count"].rank(ascending=False, method="min")
-        scores["momentum_rank"] = scores["momentum"].rank(ascending=False, method="min")
+        scores = scores.assign(ticker=scores.index.astype(str))
+
+        def _min_max(s: pd.Series) -> pd.Series:
+            s = s.astype(float)
+            min_v = float(s.min()) if not s.empty else 0.0
+            max_v = float(s.max()) if not s.empty else 0.0
+            if max_v == min_v:
+                return pd.Series(0.0, index=s.index)
+            return (s - min_v) / (max_v - min_v)
+
+        scores["corr_score"] = _min_max(scores["corr_count"])
+        scores["momentum_score"] = _min_max(scores["momentum"])
+
+        corr_order = scores.sort_values(
+            ["corr_score", "momentum_score", "ticker"],
+            ascending=[False, False, True],
+        )
+        scores.loc[corr_order.index, "corr_rank"] = range(1, len(corr_order) + 1)
+
+        mom_order = scores.sort_values(
+            ["momentum_score", "corr_score", "ticker"],
+            ascending=[False, False, True],
+        )
+        scores.loc[mom_order.index, "momentum_rank"] = range(1, len(mom_order) + 1)
+
+        scores["corr_rank"] = scores["corr_rank"].astype(float)
+        scores["momentum_rank"] = scores["momentum_rank"].astype(float)
         scores["total_score"] = (
-            scores["corr_rank"] * self.selection_weight_corr
-            + scores["momentum_rank"] * self.selection_weight_mom
+            scores["corr_score"] * self.selection_weight_corr
+            + scores["momentum_score"] * self.selection_weight_mom
         )
         scores = scores.sort_values(
-            ["total_score", "corr_count", "momentum"], ascending=[True, False, False]
+            ["total_score", "corr_score", "momentum_score", "ticker"],
+            ascending=[False, False, False, True],
         )
+        scores = scores.drop(columns=["ticker", "corr_score", "momentum_score"])
         return scores, corr
 
     def _auto_targets(
