@@ -38,7 +38,7 @@ DYNAMIC:
     # - season: SEASONS 티커 풀에서 선별
     mode: auto           # season | auto
     top_n: 10            # 점수 계산 대상 상위 N
-    buy_n: 4             # 실제 편입 수(나머지는 예비)
+    buy_n: 6 # 4             # 실제 편입 수(나머지는 예비)
     # 예비 편입 옵션
     reserve_enabled: true # 로스컷 시 예비 순위로 대체
     reserve_order: []     # 예: [4,6,8,7,5,10] 순서대로 편입
@@ -79,12 +79,12 @@ DYNAMIC:
     selector:
       # season 모드 셀렉터
       type: rank_range   # rank_range | topn
-      rank_range: [3, 6]
-      replacement_order: [1, 2, 7, 8, 9, 10]
+      rank_range: [3, 8]
+      replacement_order: [1, 2, 9, 10]
     allocator:
       # season 모드 비중 할당
       type: slot_weights # slot_weights | equal | inv_vol
-      slot_weights: [0.25, 0.25, 0.25, 0.25]
+      slot_weights: [0.16, 0.16, 0.16, 0.16, 0.16, 0.16]
       # inv_vol 옵션일 때만 사용
       # window: 60
       # min_vol: 1.0e-8
