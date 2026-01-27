@@ -230,7 +230,7 @@ def _season_window(season_year: int, season: dict) -> tuple[pd.Timestamp, pd.Tim
 def _build_monthly_heatmap(series: pd.Series, years: int = 10) -> pd.DataFrame:
     if series is None or series.empty:
         return pd.DataFrame()
-    monthly = series.resample("M").last().pct_change(fill_method=None).dropna()
+    monthly = series.resample("ME").last().pct_change(fill_method=None).dropna()
     if monthly.empty:
         return pd.DataFrame()
     df = monthly.to_frame("ret")
