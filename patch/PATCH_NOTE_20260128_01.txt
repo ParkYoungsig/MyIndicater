@@ -1,0 +1,9 @@
+Patch: Direction B categorized copies
+- Modified: research/backtester/cli.py
+  * Added: import shutil
+  * Added: _copy_artifacts_to_category_folders(run_dir: Path)
+  * Added: call to _copy_artifacts_to_category_folders(run_dir) at end of _save_results()
+
+Behavior:
+- Existing root-level result artifacts are unchanged (not moved/renamed).
+- Additional copies are created under charts/, tables/, logs/, configs/, report/ within each run output folder.
