@@ -1,0 +1,96 @@
+프로젝트 파일	구분	상세 설명
+/	폴더	프로젝트 루트 
+├── config/	폴더	설정 파일 디렉토리
+│   ├── backtester.yaml	파일	백테스트를 위한 설정 및 정보 파일
+│   ├── data.yaml	파일	데이터 수집을 위한 설정 및 정보 파일
+│   └── live.yaml	파일	실시간 거래를 위한 설정 및 정보 파일
+├── core/	폴더	핵심로직을 포함하는 디렉토리
+│   ├── allocators.py	파일	각종 계산을 함수 및 데이터 클래스
+│   ├── engine.py	파일	리벨런싱 엔진 로직
+│   ├── factors.py	파일	팩터 스코어링 로직
+│   ├── rebalancing/	폴더	각종 로직을 포함하는 디렉토리
+│   │   ├── methods.py	파일	각종 로직처리릉 위한 클래스 정의
+│   │   └── triggers.py	파일	팩터 스코어링 클래스 정의
+│   ├── scoring.py	파일	각종 스코어링 클래스 정의
+│   ├── signals.py	파일	각종 시스널 생성 메소드 및 클래스 정의
+│   ├── strategies/	폴더	전략 구현 모듈들을 위한 디렉터리
+│   │   ├── base.py	파일	전략 구현 기초 클래스
+│   │   ├── dynamic/	폴더	동적 전략 구현 디렉토리
+│   │   │   ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│   │   │   ├── daa.py	파일	동적 전략 daa
+│   │   │   ├── faa.py	파일	동적 전략 faa
+│   │   │   ├── gtaa.py	파일	동적 전략 gtaa
+│   │   │   └── vaa.py	파일	동적 전략 vaa
+│   │   └── static/	폴더	정적 전략 구현 디렉토리
+│   │       ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│   │       ├── all_weather.py	파일	정적 전략 all weather
+│   │       └── ams.py	파일	정적 전략 ams
+│   └── types.py	파일	기초 데이터 클래스 정의
+├── Description.md	파일	프로젝트 목적 기술
+├── infra/	폴더	데이터 수집 및 증권사 연동을 위한 폴더
+│   ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│   ├── api/	폴더	외부 연동을 위한 폴더
+│   │   ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│   │   ├── auth.py	파일	인증을 위한 기초 정보 파일
+│   │   ├── broker/	폴더	증권사 연동을 위한 폴더
+│   │   │   ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│   │   │   ├── base.py	파일	증권사 연동 기초 클래스 정의
+│   │   │   └── kis.py	파일	한국투자증권 API를 사용한 구현
+│   │   └── slack.py	파일	slack를 활용한 눈 연동
+│   ├── config.py	파일	config 파일 로딩을 위한 프로그램
+│   ├── data_manager/	폴더	데이터 수집 로직을 위한 폴더
+│   │   ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│   │   ├── cache.py	파일	수집된 데이터를 임시 보관하기 위한 모듈
+│   │   ├── downloader.py	파일	데이터 수집을 수행하는 모듈
+│   │   ├── etf_list_20260115.csv	파일	국내 ETF 리스팅
+│   │   └── preprocess.py	파일	데이터 정제를 위한 모듈
+│   └── logger.py	파일	logger 클래스 획득
+├── live/	폴더	거래를 위한 모듈 디렉토리
+│   ├── broker/	폴더	증권사 인터페이스 모듈폴더
+│   │   ├── base.py	파일	증권사 거래 클래스 정의
+│   │   └── kis.py	파일	한국투자증권 거래 클래스 정의
+│   ├── cli.py	파일	거래 실행 프로그램
+│   ├── engine.py	파일	거래 실행 엔진
+│   ├── execution/	폴더	거래 실행 관리자 디렉토리
+│   │   └── order_manager.py	파일	거래 실행 관리자 클래스 정의
+│   ├── kis/	폴더	한국투자증권 인터페이스 구현
+│   │   ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│   │   ├── auth_functions.py	파일	인증을 위한 인터페이스 모듈
+│   │   ├── domestic_stock_functions.py	파일	국내주식 처리 모듈
+│   │   └── kis_auth.py	파일	한국 투자증권 인증 실행 모듈
+│   ├── monitoring/	폴더	모니터링 관련 디렉토리
+│   │   └── slack.py	파일	slack 인터페이스 클래스 정의
+│   ├── state.json	파일	정적 자산 배분 json 파일
+│   ├── state.py	파일	"정적 자산배분 json 파일"생성을 위한 모듈
+│   ├── strategy/	폴더	자산별 거래 구현 디렉토리
+│   │   ├── dynamic.py	파일	동적 자산 거래 모듈
+│   │   └── static.py	파일	정적 자산 거래 모듈
+│   └── utils/	폴더	라이브 거래 관련 유틸리티
+│       └── universe.py	파일	거래를 위한 universe 생성 모듈
+├── README.md	파일	프로젝트 내 프로그램별 수행을 위한 설명
+├── requirements.txt	파일	프로젝트 실행에 필요한 모듈 정보 파일
+├── research/	폴더	종목 탐색 및 백테스트를 위한 폴더
+│   └── backtester/	폴더	벡테스트를 위한 폴더
+│       ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│       ├── cli.py	파일	백테스트 수행 커맨드라인 인터페이스(cli)
+│       ├── config.py	파일	config 파일에 저장된 구성정보를 로딩하는 모듈
+│       ├── data_loader.py	파일	데이터 수집을 실행하는 프로그램 파일
+│       ├── master.py	파일	백테스트를 수행하는 클래스 정의
+│       ├── metrics.py	파일	Performance Summary 생성
+│       ├── runner.py	파일	실행에 사용되는 데이터 클래스 정의
+│       ├── strategies/	폴더	리벨런싱 엔진 로직을 위한 폴더
+│       │   ├── __init__.py	파일	해당 위치 패키지 초기화 파일(자동생성됨)
+│       │   ├── dynamic_engine.py	파일	동적 리밸런싱 로직
+│       │   └── static_engine.py	파일	정적 리밸런싱 로직
+│       ├── universe.py	파일	유니버스 관리를 위한 로직
+│       └── utils.py	파일	유틸리티 함수 모음
+├── scripts/	폴더	별도 처리를 위한 프로그램 모음
+│   ├── build_sector_map.py	파일	다운로드 받은 종목 데이터에 섹터정보를 추가
+│   ├── compare_results.py	파일	백테스트 결과를 비교해주는 프로그램
+│   ├── stop_loss_report.py	파일	stop loss 리포트 작성
+│   ├── test_live_smoke.py	파일	한국투자증권 실시간 거래 테스트
+│   └── write_kis_init.py	파일	한국투자증권 실시간 거래 테스트
+├── treeInfo.txt	파일	프로젝트 전체 파일 리스팅
+└── utils/	폴더	유틸리티성 프로그램 모음
+    ├── printTree.py	파일	treeinfo.txt'를 생성하는 프로그램
+    └── test.py	파일	파이선 정상 동작 확인용 프로그램
