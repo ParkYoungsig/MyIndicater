@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -60,7 +61,41 @@ def run_dual_engine_backtest(
     )
     cfg = apply_overrides(cfg, start=start, end=end)
 
-    master = MasterPortfolio(cfg)
+    # If JSON replay is enabled and snapshots exist in the referenced run_dir, use them to ensure full determinism.
+    prices_snapshot = None
+    open_snapshot = None
+    market_cap_snapshot = None
+    trading_value_snapshot = None
+    try:
+        json_cfg = cfg.get("JSON") if isinstance(cfg.get("JSON"), dict) else {}
+        if json_cfg.get("enabled") and json_cfg.get("run_dir"):
+            run_dir = Path(cfg.get("RESULTS_DIR", "./results")) / str(json_cfg["run_dir"])
+            close_p = run_dir / "prices_close.csv"
+            open_p = run_dir / "prices_open.csv"
+            mc_p = run_dir / "market_cap.csv"
+            tv_p = run_dir / "trading_value.csv"
+            if close_p.exists():
+                prices_snapshot = pd.read_csv(close_p, index_col=0)
+                prices_snapshot.index = pd.DatetimeIndex(prices_snapshot.index)
+            if open_p.exists():
+                open_snapshot = pd.read_csv(open_p, index_col=0)
+                open_snapshot.index = pd.DatetimeIndex(open_snapshot.index)
+            if mc_p.exists():
+                market_cap_snapshot = pd.read_csv(mc_p, index_col=0)
+                market_cap_snapshot.index = pd.DatetimeIndex(market_cap_snapshot.index)
+            if tv_p.exists():
+                trading_value_snapshot = pd.read_csv(tv_p, index_col=0)
+                trading_value_snapshot.index = pd.DatetimeIndex(trading_value_snapshot.index)
+    except Exception:
+        pass
+
+    master = MasterPortfolio(
+        cfg,
+        prices=prices_snapshot,
+        open_prices=open_snapshot,
+        market_cap=market_cap_snapshot,
+        trading_value=trading_value_snapshot,
+    )
     equity = master.run()
     returns = equity.pct_change(fill_method=None).fillna(0.0)
     static_equity = master.static_equity
@@ -70,19 +105,6 @@ def run_dual_engine_backtest(
 
     benchmark_ticker = cfg.get("BENCHMARK_TICKER")
     prices = master.prices
-
-
-    # Additional inputs (for deterministic replay / inspection)
-    open_prices = getattr(master, "open_prices", None)
-    if open_prices is None:
-        # Fallback: use close prices when open is unavailable
-        open_prices = prices.copy()
-    market_cap = getattr(master, "market_cap", None)
-    if market_cap is None:
-        market_cap = pd.DataFrame(index=prices.index, columns=prices.columns, dtype=float)
-    trading_value = getattr(master, "trading_value", None)
-    if trading_value is None:
-        trading_value = pd.DataFrame(index=prices.index, columns=prices.columns, dtype=float)
     if benchmark_ticker and benchmark_ticker in prices.columns:
         bench = prices[benchmark_ticker].dropna()
         benchmark_equity = (bench / bench.iloc[0]) * float(cfg["INITIAL_CAPITAL"])
@@ -113,10 +135,6 @@ def run_dual_engine_backtest(
         benchmark_performance=bench_perf,
         prices=prices,
         dynamic_selection_log=list(getattr(master.dynamic_engine, "selection_log", [])),
-        open_prices=open_prices,
-        market_cap=market_cap,
-        trading_value=trading_value,
-
     )
 
 

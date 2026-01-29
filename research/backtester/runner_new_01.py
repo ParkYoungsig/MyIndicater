@@ -36,9 +36,6 @@ class DualEngineResult:
     performance: Dict[str, float]
     benchmark_performance: Dict[str, float]
     prices: pd.DataFrame
-    open_prices: pd.DataFrame
-    market_cap: pd.DataFrame
-    trading_value: pd.DataFrame
     dynamic_selection_log: list[Dict[str, Any]]
 
 
@@ -70,19 +67,6 @@ def run_dual_engine_backtest(
 
     benchmark_ticker = cfg.get("BENCHMARK_TICKER")
     prices = master.prices
-
-
-    # Additional inputs (for deterministic replay / inspection)
-    open_prices = getattr(master, "open_prices", None)
-    if open_prices is None:
-        # Fallback: use close prices when open is unavailable
-        open_prices = prices.copy()
-    market_cap = getattr(master, "market_cap", None)
-    if market_cap is None:
-        market_cap = pd.DataFrame(index=prices.index, columns=prices.columns, dtype=float)
-    trading_value = getattr(master, "trading_value", None)
-    if trading_value is None:
-        trading_value = pd.DataFrame(index=prices.index, columns=prices.columns, dtype=float)
     if benchmark_ticker and benchmark_ticker in prices.columns:
         bench = prices[benchmark_ticker].dropna()
         benchmark_equity = (bench / bench.iloc[0]) * float(cfg["INITIAL_CAPITAL"])
@@ -113,10 +97,6 @@ def run_dual_engine_backtest(
         benchmark_performance=bench_perf,
         prices=prices,
         dynamic_selection_log=list(getattr(master.dynamic_engine, "selection_log", [])),
-        open_prices=open_prices,
-        market_cap=market_cap,
-        trading_value=trading_value,
-
     )
 
 

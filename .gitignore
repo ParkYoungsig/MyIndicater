@@ -6,9 +6,6 @@ __pycache__/
 # C extensions
 *.so
 
-# MS Office Temporary File
-~$*
-
 # Distribution / packaging
 .Python
 build/

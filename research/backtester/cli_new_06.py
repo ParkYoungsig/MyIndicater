@@ -984,12 +984,17 @@ def _save_results(result, config_name: str, logic_name: str | None) -> None:
 
     mdd_lines: list[str] = []
     try:
-        # NOTE: Previously we ran a second backtest here to compute a 'no stop-loss' MDD.
-        # That caused Universe data to load twice and could introduce side effects.
-        # We keep the output files for user convenience, but mark 'without_stop_loss' as NaN.
+        cfg_no_sl = deepcopy(result.config)
+        dyn = cfg_no_sl.setdefault("DYNAMIC", {})
+        logic = dyn.setdefault("LOGIC", {})
+        logic["stop_loss"] = {"type": "none"}
+        alt = run_dual_engine_backtest(
+            config_name=config_name,
+            config=cfg_no_sl,
+            logic_name=logic_name,
+        )
         mdd_with = _mdd_from_equity(result.equity)
-        mdd_without = float('nan')
-
+        mdd_without = _mdd_from_equity(alt.equity)
         mdd_df = pd.DataFrame(
             [
                 {"scenario": "with_stop_loss", "mdd": mdd_with},
@@ -1095,19 +1100,6 @@ def _save_results(result, config_name: str, logic_name: str | None) -> None:
         "- regime_analysis.csv",
         "- mdd_defense.csv",
     ]
-    # Snapshot inputs for deterministic JSON replay (kept even if duplicated for user convenience)
-    try:
-        if getattr(result, 'prices', None) is not None:
-            result.prices.to_csv(run_dir / 'prices_close.csv', encoding='utf-8-sig')
-        if getattr(result, 'open_prices', None) is not None:
-            result.open_prices.to_csv(run_dir / 'prices_open.csv', encoding='utf-8-sig')
-        if getattr(result, 'market_cap', None) is not None:
-            result.market_cap.to_csv(run_dir / 'market_cap.csv', encoding='utf-8-sig')
-        if getattr(result, 'trading_value', None) is not None:
-            result.trading_value.to_csv(run_dir / 'trading_value.csv', encoding='utf-8-sig')
-    except Exception:
-        pass
-
     (run_dir / "summary.md").write_text("\n".join(md_lines), encoding="utf-8")
 
     print(f"[Saved] {run_dir}")
