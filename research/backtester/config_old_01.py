@@ -250,16 +250,8 @@ def load_dual_engine_config(
                     "JSON 모드가 활성화되었지만 run_dir가 지정되지 않았습니다."
                 )
             run_dir = _resolve_results_root(user_cfg) / str(json_run_name)
-        # Prefer config_merged.json when available to reproduce the exact configuration used in that run.
-        merged_path = run_dir / "config_merged.json"
-        if merged_path.exists():
-            merged_cfg = _load_json_file(merged_path)
-            # config_merged.json already contains the fully merged configuration (including embedded LOGIC dict).
-            # CLI start/end overrides will be applied later via apply_overrides().
-            user_cfg = merged_cfg
-        else:
-            backtester_cfg, logic_cfg = _load_json_configs_from_run_dir(run_dir)
-            user_cfg = _apply_logic_override_dict(backtester_cfg, logic_cfg)
+        backtester_cfg, logic_cfg = _load_json_configs_from_run_dir(run_dir)
+        user_cfg = _apply_logic_override_dict(backtester_cfg, logic_cfg)
     else:
         if logic_name:
             user_cfg = _apply_logic_override(user_cfg, logic_name)

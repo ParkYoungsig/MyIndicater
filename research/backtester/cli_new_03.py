@@ -625,21 +625,6 @@ def _save_results(result, config_name: str, logic_name: str | None) -> None:
         except Exception:
             logic_cfg = {}
 
-    # If LOGIC is embedded in backtester.yaml (logic_cfg may be empty), save the effective logic used in this run.
-
-    if not logic_cfg:
-
-        logic_cfg = (
-
-            (result.config.get("DYNAMIC") or {}).get("LOGIC")
-
-            if isinstance(result.config.get("DYNAMIC"), dict)
-
-            else {}
-
-        ) or {}
-
-
     (run_dir / "config_backtester.json").write_text(
         json.dumps(user_cfg, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8"
     )
