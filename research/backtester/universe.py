@@ -194,7 +194,7 @@ class UniverseLoader:
         if not tickers:
             return []
 
-        self._ensure_fundamentals_loaded(tickers)
+        self._ensure_fundamentals_loaded(sorted(tickers))
 
         if as_of not in close_df.index:
             recent_idx = close_df.index[close_df.index <= as_of]
@@ -239,5 +239,4 @@ class UniverseLoader:
         final_mask = mask_price & mask_age & mask_cap & mask_turnover
         selected_tickers = final_mask[final_mask].index.tolist()
 
-        selected_set = set(selected_tickers)
-        return [t for t in tickers if t in selected_set]
+        return list(set(tickers) & set(selected_tickers))

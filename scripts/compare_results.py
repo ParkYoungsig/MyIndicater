@@ -135,7 +135,7 @@ def _write_csv(path: Path, rows: List[Dict[str, float]]) -> None:
 
 def _write_json(path: Path, rows: List[Dict[str, float]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(rows, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+    path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _print_table(rows: List[Dict[str, float]]) -> None:

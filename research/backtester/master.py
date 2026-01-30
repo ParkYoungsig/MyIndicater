@@ -11,13 +11,26 @@ from .utils import to_date_index
 
 class MasterPortfolio:
     def __init__(
-        self, config: Dict[str, Any], *, prices: Optional[pd.DataFrame] = None
+        self,
+        config: Dict[str, Any],
+        *,
+        prices: Optional[pd.DataFrame] = None,
+        open_prices: Optional[pd.DataFrame] = None,
+        market_cap: Optional[pd.DataFrame] = None,
+        trading_value: Optional[pd.DataFrame] = None,
     ) -> None:
         self.config = config
         self.loader = UniverseLoader(config)
+        # Inject fundamentals snapshots for deterministic JSON replay (optional)
+        if market_cap is not None:
+            self.loader._cached_market_cap = market_cap
+        if trading_value is not None:
+            self.loader._cached_trading_value = trading_value
         self.full_prices = prices if prices is not None else self.loader.load_prices()
         self.full_prices.index = pd.DatetimeIndex(to_date_index(self.full_prices))
-        self.full_open_prices = self.loader.load_open_prices()
+        self.full_open_prices = (
+            open_prices if open_prices is not None else self.loader.load_open_prices()
+        )
         self.full_open_prices.index = pd.DatetimeIndex(
             to_date_index(self.full_open_prices)
         )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -17,6 +18,15 @@ from infra.data_manager.downloader import load_ohlcv_bulk
 from .config import apply_overrides, load_dual_engine_config
 from .master import MasterPortfolio
 from .metrics import performance_summary
+
+
+def _load_snapshot_csv(path: Path) -> pd.DataFrame:
+    df = pd.read_csv(path, index_col=0)
+    try:
+        df.index = pd.to_datetime(df.index)
+    except Exception:
+        pass
+    return df
 
 
 @dataclass(frozen=True)
@@ -36,6 +46,9 @@ class DualEngineResult:
     performance: Dict[str, float]
     benchmark_performance: Dict[str, float]
     prices: pd.DataFrame
+    open_prices: pd.DataFrame
+    market_cap: pd.DataFrame
+    trading_value: pd.DataFrame
     dynamic_selection_log: list[Dict[str, Any]]
 
 
@@ -57,7 +70,74 @@ def run_dual_engine_backtest(
     )
     cfg = apply_overrides(cfg, start=start, end=end)
 
-    master = MasterPortfolio(cfg)
+    # JSON replay with full data snapshot: if snapshot files exist in the referenced run_dir, use them.
+
+    snap_prices: pd.DataFrame | None = None
+
+    snap_open: pd.DataFrame | None = None
+
+    snap_mc: pd.DataFrame | None = None
+
+    snap_tv: pd.DataFrame | None = None
+
+
+    json_cfg = cfg.get("JSON", {}) or {}
+
+    run_dir_name: str | None = None
+
+    if isinstance(json_cfg, dict) and json_cfg.get("enabled") and json_cfg.get("run_dir"):
+
+        run_dir_name = str(json_cfg.get("run_dir"))
+
+    elif json_run:
+
+        run_dir_name = str(json_run)
+
+
+    if run_dir_name:
+
+        run_dir = (Path(__file__).resolve().parents[2] / "results" / run_dir_name).resolve()
+
+        prices_path = run_dir / "prices_close.csv"
+
+        open_path = run_dir / "prices_open.csv"
+
+        mc_path = run_dir / "market_cap.csv"
+
+        tv_path = run_dir / "trading_value.csv"
+
+
+        if prices_path.exists():
+
+            snap_prices = _load_snapshot_csv(prices_path)
+
+        if open_path.exists():
+
+            snap_open = _load_snapshot_csv(open_path)
+
+        if mc_path.exists():
+
+            snap_mc = _load_snapshot_csv(mc_path)
+
+        if tv_path.exists():
+
+            snap_tv = _load_snapshot_csv(tv_path)
+
+
+    master = MasterPortfolio(
+
+        cfg,
+
+        prices=snap_prices,
+
+        open_prices=snap_open,
+
+        market_cap=snap_mc,
+
+        trading_value=snap_tv,
+
+    )
+
     equity = master.run()
     returns = equity.pct_change(fill_method=None).fillna(0.0)
     static_equity = master.static_equity

@@ -166,7 +166,7 @@ class DynamicStrategy:
 
         # allocate available cash to next reserve candidate
         next_ticker = candidates[0]
-        all_tickers = sorted(current) + [next_ticker]
+        all_tickers = list(current) + [next_ticker]
         weights = self._auto_targets(all_tickers, prices_df, as_of)
         target_weight = float(weights.get(next_ticker, 0.0))
         if target_weight <= 0:
@@ -450,7 +450,7 @@ class DynamicStrategy:
         target_shares: Dict[str, float] = {}
 
         universe = set(self.holdings.keys()) | set(targets.keys())
-        for t in sorted(universe):
+        for t in universe:
             price = float(prices.get(t, 0.0))
             if price <= 0 or pd.isna(price):
                 target_shares[t] = self.holdings.get(t, 0.0)

@@ -6,7 +6,6 @@ import os
 import sys
 import time
 import warnings
-import shutil
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -435,176 +434,6 @@ def _regime_analysis(
     return summary.reset_index()
 
 
-
-
-def _copy_artifacts_to_category_folders(run_dir: Path) -> None:
-    """Create convenience subfolders and copy root-level artifacts into them.
-
-    Policy (Direction B):
-    - DO NOT move or rename existing root artifacts.
-    - Always create categorized folders and place COPIES of artifacts for human convenience.
-    """
-    folders = {
-        "charts": run_dir / "charts",
-        "tables": run_dir / "tables",
-        "logs": run_dir / "logs",
-        "configs": run_dir / "configs",
-        "report": run_dir / "report",
-    }
-    for p in folders.values():
-        p.mkdir(parents=True, exist_ok=True)
-
-    config_names = {"config_backtester.json", "config_logic.json", "config_merged.json"}
-    report_names = {"summary.md"}
-
-    for item in run_dir.iterdir():
-        if not item.is_file():
-            continue
-        name = item.name
-        lower = name.lower()
-
-        if lower.endswith(".png"):
-            dst_dir = folders["charts"]
-        elif lower.endswith(".csv"):
-            dst_dir = folders["tables"]
-        elif name in config_names:
-            dst_dir = folders["configs"]
-        elif lower.endswith(".json"):
-            dst_dir = folders["logs"]
-        elif name in report_names:
-            dst_dir = folders["report"]
-        else:
-            continue
-
-        shutil.copy2(item, dst_dir / name)
-
-
-def _replay_total_equity_without_stoploss(result: "DualEngineResult") -> "pd.Series":
-    """Recompute TOTAL equity assuming stop-loss is disabled, without re-running the backtest.
-
-    This avoids a second call to run_dual_engine_backtest() (and thus avoids re-loading Universe data).
-
-    We keep the static sleeve equity exactly as in the original run, and re-simulate only the dynamic sleeve
-    from the selection log using equal-weight allocation. This preserves the mdd_defense artifacts while
-    ensuring the backtest runs only once.
-    """
-    prices = result.prices
-    if prices is None or prices.empty:
-        return result.equity.copy()
-
-    idx = pd.DatetimeIndex(prices.index)
-    prices = prices.copy()
-    prices.index = idx
-
-    dyn_equity0 = float(result.dynamic_equity.iloc[0]) if len(result.dynamic_equity) else 0.0
-
-    cfg = result.config or {}
-    dyn_cfg = cfg.get("DYNAMIC", {}) or {}
-    sel_cfg = dyn_cfg.get("SELECTION", {}) or {}
-    timing = str(sel_cfg.get("rebalance_timing", "next_open")).lower()
-    fee = float(dyn_cfg.get("FEES", 0.0) or 0.0)
-
-    sel_map = {}
-    for rec in (result.dynamic_selection_log or []):
-        if "date" not in rec:
-            continue
-        d = pd.Timestamp(rec["date"])
-        sel_map[d] = list(rec.get("selected") or [])
-
-    index_list = list(prices.index)
-    index_pos = {d: i for i, d in enumerate(index_list)}
-
-    def trade_date(selection_date: pd.Timestamp):
-        if selection_date not in index_pos:
-            return None
-        if timing == "same_open":
-            return selection_date
-        i = index_pos[selection_date]
-        if i + 1 >= len(index_list):
-            return None
-        return index_list[i + 1]
-
-    trade_map = {}
-    for sd, selected in sel_map.items():
-        td = trade_date(sd)
-        if td is not None:
-            trade_map[td] = selected
-
-    cash = dyn_equity0
-    shares: dict[str, float] = {}
-    dyn_equity = pd.Series(index=prices.index, dtype="float64")
-
-    def portfolio_value(row) -> float:
-        v = cash
-        for t, sh in shares.items():
-            px = row.get(t)
-            if pd.notna(px):
-                v += float(sh) * float(px)
-        return float(v)
-
-    for d in prices.index:
-        row = prices.loc[d]
-
-        if d in trade_map:
-            selected = trade_map[d]
-
-            sell_notional = 0.0
-            for t, sh in list(shares.items()):
-                px = row.get(t)
-                if pd.isna(px):
-                    continue
-                notional = float(sh) * float(px)
-                sell_notional += notional
-                cash += notional
-                shares.pop(t, None)
-            if fee > 0 and sell_notional > 0:
-                cash -= sell_notional * fee
-
-            selected = [t for t in selected if pd.notna(row.get(t))]
-            if selected and cash > 0:
-                target_each = cash / float(len(selected))
-                buy_notional = 0.0
-                for t in selected:
-                    px = float(row.get(t))
-                    if px <= 0:
-                        continue
-                    sh = target_each / px
-                    shares[t] = shares.get(t, 0.0) + sh
-                    buy_notional += sh * px
-                cash -= buy_notional
-                if fee > 0 and buy_notional > 0:
-                    cash -= buy_notional * fee
-
-        dyn_equity.loc[d] = portfolio_value(row)
-
-    static_eq = result.static_equity.reindex(dyn_equity.index).ffill()
-    return static_eq + dyn_equity
-
-
-
-
-def _normalize_selection_log_for_json(selection_log):
-    """Normalize selection log for deterministic JSON output (no effect on backtest results).
-    - Sort ticker lists inside each record when present.
-    """
-    if not isinstance(selection_log, list):
-        return selection_log
-    out = []
-    for rec in selection_log:
-        if not isinstance(rec, dict):
-            out.append(rec)
-            continue
-        r = dict(rec)
-        for k in ("selected", "candidates", "dropped", "reserve", "removed"):
-            v = r.get(k)
-            if isinstance(v, list):
-                try:
-                    r[k] = sorted(v)
-                except Exception:
-                    pass
-        out.append(r)
-    return out
-
 def _save_results(result, config_name: str, logic_name: str | None) -> None:
     report_start = time.perf_counter()
     output_root = _resolve_output_root(result.config)
@@ -624,21 +453,6 @@ def _save_results(result, config_name: str, logic_name: str | None) -> None:
             logic_cfg = load_yaml_config(logic_config_name)
         except Exception:
             logic_cfg = {}
-
-    # If LOGIC is embedded in backtester.yaml (logic_cfg may be empty), save the effective logic used in this run.
-
-    if not logic_cfg:
-
-        logic_cfg = (
-
-            (result.config.get("DYNAMIC") or {}).get("LOGIC")
-
-            if isinstance(result.config.get("DYNAMIC"), dict)
-
-            else {}
-
-        ) or {}
-
 
     (run_dir / "config_backtester.json").write_text(
         json.dumps(user_cfg, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8"
@@ -1170,10 +984,17 @@ def _save_results(result, config_name: str, logic_name: str | None) -> None:
 
     mdd_lines: list[str] = []
     try:
-        # Single-run MDD defense: replay equity without stop-loss (no second backtest run)
-        equity_no_sl = _replay_total_equity_without_stoploss(result)
+        cfg_no_sl = deepcopy(result.config)
+        dyn = cfg_no_sl.setdefault("DYNAMIC", {})
+        logic = dyn.setdefault("LOGIC", {})
+        logic["stop_loss"] = {"type": "none"}
+        alt = run_dual_engine_backtest(
+            config_name=config_name,
+            config=cfg_no_sl,
+            logic_name=logic_name,
+        )
         mdd_with = _mdd_from_equity(result.equity)
-        mdd_without = _mdd_from_equity(equity_no_sl)
+        mdd_without = _mdd_from_equity(alt.equity)
         mdd_df = pd.DataFrame(
             [
                 {"scenario": "with_stop_loss", "mdd": mdd_with},
@@ -1279,10 +1100,20 @@ def _save_results(result, config_name: str, logic_name: str | None) -> None:
         "- regime_analysis.csv",
         "- mdd_defense.csv",
     ]
-    (run_dir / "summary.md").write_text("\n".join(md_lines), encoding="utf-8")
+# Data snapshot files for deterministic JSON replay (saved redundantly for user convenience)
+try:
+    if hasattr(result, "prices") and result.prices is not None:
+        result.prices.to_csv(run_dir / "prices_close.csv", encoding="utf-8-sig")
+    if hasattr(result, "open_prices") and result.open_prices is not None:
+        result.open_prices.to_csv(run_dir / "prices_open.csv", encoding="utf-8-sig")
+    if hasattr(result, "market_cap") and result.market_cap is not None:
+        result.market_cap.to_csv(run_dir / "market_cap.csv", encoding="utf-8-sig")
+    if hasattr(result, "trading_value") and result.trading_value is not None:
+        result.trading_value.to_csv(run_dir / "trading_value.csv", encoding="utf-8-sig")
+except Exception:
+    pass
 
-    # Convenience copies (Direction B): keep root artifacts and also place categorized copies
-    _copy_artifacts_to_category_folders(run_dir)
+    (run_dir / "summary.md").write_text("\n".join(md_lines), encoding="utf-8")
 
     print(f"[Saved] {run_dir}")
 
